@@ -36,19 +36,28 @@ public class Payment extends TPCCProcedure {
 
     private static final Logger LOG = Logger.getLogger(Payment.class);
 
+    public SQLStmt readForPayUpdateWhseSQL = new SQLStmt(
+            "SELECT W_YTD FROM " + TPCCConstants.TABLENAME_WAREHOUSE + 
+	    " WHERE W_ID = ?");
+
     public SQLStmt payUpdateWhseSQL = new SQLStmt(
             "UPDATE " + TPCCConstants.TABLENAME_WAREHOUSE + 
-            "   SET W_YTD = W_YTD + ? " +
+            " SET  W_YTD = ? " +
             " WHERE W_ID = ? ");
     
     public SQLStmt payGetWhseSQL = new SQLStmt(
             "SELECT W_STREET_1, W_STREET_2, W_CITY, W_STATE, W_ZIP, W_NAME" + 
             "  FROM " + TPCCConstants.TABLENAME_WAREHOUSE + 
             " WHERE W_ID = ?");
-    
+
+     public SQLStmt readForPayUpdateDistSQL = new SQLStmt(
+            "SELECT D_YTD FROM " + TPCCConstants.TABLENAME_DISTRICT + 
+	    " WHERE D_W_ID = ? " +
+	    " AND D_ID = ?");
+   
     public SQLStmt payUpdateDistSQL = new SQLStmt(
             "UPDATE " + TPCCConstants.TABLENAME_DISTRICT + 
-            "   SET D_YTD = D_YTD + ? " +
+            " SET D_YTD = ? " +
             " WHERE D_W_ID = ? " +
             "   AND D_ID = ?");
     
@@ -109,6 +118,8 @@ public class Payment extends TPCCProcedure {
             " ORDER BY C_FIRST");
 
     // Payment Txn
+    private PreparedStatement readForPayUpdateWhse = null;
+    private PreparedStatement readForPayUpdateDist = null;
     private PreparedStatement payUpdateWhse = null;
     private PreparedStatement payGetWhse = null;
     private PreparedStatement payUpdateDist = null;
@@ -125,8 +136,10 @@ public class Payment extends TPCCProcedure {
                          int terminalDistrictLowerID, int terminalDistrictUpperID, TPCCWorker w) throws SQLException {
 
         // initializing all prepared statements
+        readForPayUpdateWhse = this.getPreparedStatement(conn, readForPayUpdateWhseSQL);
         payUpdateWhse = this.getPreparedStatement(conn, payUpdateWhseSQL);
         payGetWhse = this.getPreparedStatement(conn, payGetWhseSQL);
+	readForPayUpdateDist = this.getPreparedStatement(conn, readForPayUpdateDistSQL);
         payUpdateDist = this.getPreparedStatement(conn, payUpdateDistSQL);
         payGetDist = this.getPreparedStatement(conn, payGetDistSQL);
         payGetCust = this.getPreparedStatement(conn, payGetCustSQL);
@@ -173,7 +186,14 @@ public class Payment extends TPCCProcedure {
         String w_street_1, w_street_2, w_city, w_state, w_zip, w_name;
         String d_street_1, d_street_2, d_city, d_state, d_zip, d_name;
 
-        payUpdateWhse.setDouble(1, paymentAmount);
+	readForPayUpdateWhse.setInt(1, w_id);
+        ResultSet read_wytd = readForPayUpdateWhse.executeQuery();
+	if(!read_wytd.next()) {
+		throw new RuntimeException("Could not read for wytd");
+	}
+	double wytd = read_wytd.getDouble("W_YTD");
+
+        payUpdateWhse.setDouble(1, paymentAmount + wytd);
         payUpdateWhse.setInt(2, w_id);
         // MySQL reports deadlocks due to lock upgrades:
         // t1: read w_id = x; t2: update w_id = x; t1 update w_id = x
@@ -194,7 +214,15 @@ public class Payment extends TPCCProcedure {
         rs.close();
         rs = null;
 
-        payUpdateDist.setDouble(1, paymentAmount);
+	readForPayUpdateDist.setInt(1, w_id);
+	readForPayUpdateDist.setInt(2, districtID);
+        ResultSet read_dytd = readForPayUpdateDist.executeQuery();
+	if(!read_dytd.next()) {
+		throw new RuntimeException("Could not read for dytd");
+	}
+	double dytd = read_dytd.getDouble("D_YTD");
+
+        payUpdateDist.setDouble(1, paymentAmount + dytd);
         payUpdateDist.setInt(2, w_id);
         payUpdateDist.setInt(3, districtID);
         result = payUpdateDist.executeUpdate();

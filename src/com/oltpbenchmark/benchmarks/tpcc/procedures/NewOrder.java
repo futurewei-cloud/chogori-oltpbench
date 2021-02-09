@@ -58,7 +58,7 @@ public class NewOrder extends TPCCProcedure {
 
 	public final SQLStmt  stmtUpdateDistSQL = new SQLStmt(
 	        "UPDATE " + TPCCConstants.TABLENAME_DISTRICT + 
-	        "   SET D_NEXT_O_ID = D_NEXT_O_ID + 1 " +
+	        "   SET D_NEXT_O_ID = ? " +
             " WHERE D_W_ID = ? " +
 	        "   AND D_ID = ?");
 
@@ -73,7 +73,7 @@ public class NewOrder extends TPCCProcedure {
             " WHERE I_ID = ?");
 
 	public final SQLStmt  stmtGetStockSQL = new SQLStmt(
-	        "SELECT S_QUANTITY, S_DATA, S_DIST_01, S_DIST_02, S_DIST_03, S_DIST_04, S_DIST_05, " +
+	        "SELECT S_QUANTITY, S_YTD, S_ORDER_CNT, S_REMOTE_CNT, S_DATA, S_DIST_01, S_DIST_02, S_DIST_03, S_DIST_04, S_DIST_05, " +
             "       S_DIST_06, S_DIST_07, S_DIST_08, S_DIST_09, S_DIST_10" +
             "  FROM " + TPCCConstants.TABLENAME_STOCK + 
             " WHERE S_I_ID = ? " +
@@ -82,9 +82,9 @@ public class NewOrder extends TPCCProcedure {
 	public final SQLStmt  stmtUpdateStockSQL = new SQLStmt(
 	        "UPDATE " + TPCCConstants.TABLENAME_STOCK + 
 	        "   SET S_QUANTITY = ? , " +
-            "       S_YTD = S_YTD + ?, " + 
-	        "       S_ORDER_CNT = S_ORDER_CNT + 1, " +
-            "       S_REMOTE_CNT = S_REMOTE_CNT + ? " +
+            "       S_YTD = ?, " + 
+	        "       S_ORDER_CNT = ?, " +
+            "       S_REMOTE_CNT = ? " +
 	        " WHERE S_I_ID = ? " +
             "   AND S_W_ID = ?");
 
@@ -219,8 +219,9 @@ public class NewOrder extends TPCCProcedure {
 
 			//woonhak, need to change order because of foreign key constraints
 			//update next_order_id first, but it might doesn't matter
-			stmtUpdateDist.setInt(1, w_id);
-			stmtUpdateDist.setInt(2, d_id);
+			stmtUpdateDist.setInt(1, d_next_o_id + 1);
+			stmtUpdateDist.setInt(2, w_id);
+			stmtUpdateDist.setInt(3, d_id);
 			int result = stmtUpdateDist.executeUpdate();
 			if (result == 0)
 				throw new RuntimeException(
@@ -295,6 +296,9 @@ public class NewOrder extends TPCCProcedure {
 					throw new RuntimeException("I_ID=" + ol_i_id
 							+ " not found!");
 				s_quantity = rs.getInt("S_QUANTITY");
+				double s_ytd = rs.getDouble("S_YTD");
+				int s_order_cnt = rs.getInt("S_ORDER_CNT");
+				int s_remote_cnt = rs.getInt("S_REMOTE_CNT");
 				s_data = rs.getString("S_DATA");
 				s_dist_01 = rs.getString("S_DIST_01");
 				s_dist_02 = rs.getString("S_DIST_02");
@@ -325,10 +329,11 @@ public class NewOrder extends TPCCProcedure {
 
 
 				stmtUpdateStock.setInt(1, s_quantity);
-				stmtUpdateStock.setInt(2, ol_quantity);
-				stmtUpdateStock.setInt(3, s_remote_cnt_increment);
-				stmtUpdateStock.setInt(4, ol_i_id);
-				stmtUpdateStock.setInt(5, ol_supply_w_id);
+				stmtUpdateStock.setInt(2, ol_quantity + (int)s_ytd);
+				stmtUpdateStock.setInt(3, s_order_cnt + 1);
+				stmtUpdateStock.setInt(4, s_remote_cnt_increment + s_remote_cnt);
+				stmtUpdateStock.setInt(5, ol_i_id);
+				stmtUpdateStock.setInt(6, ol_supply_w_id);
 				stmtUpdateStock.addBatch();
 
 				ol_amount = ol_quantity * i_price;

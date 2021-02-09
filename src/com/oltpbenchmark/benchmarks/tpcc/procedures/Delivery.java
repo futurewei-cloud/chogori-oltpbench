@@ -74,11 +74,17 @@ public class Delivery extends TPCCProcedure {
 			" WHERE OL_O_ID = ? " +
 			"   AND OL_D_ID = ? " +
 			"   AND OL_W_ID = ?");
-	
+
+	public SQLStmt readCustomerSQL = new SQLStmt(
+	        "SELECT C_BALANCE, C_DELIVERY_CNT FROM " + TPCCConstants.TABLENAME_CUSTOMER +
+			" WHERE C_W_ID = ? " +
+			"   AND C_D_ID = ? " +
+			"   AND C_ID = ? ");
+
 	public SQLStmt delivUpdateCustBalDelivCntSQL = new SQLStmt(
 	        "UPDATE " + TPCCConstants.TABLENAME_CUSTOMER +
-	        "   SET C_BALANCE = C_BALANCE + ?," +
-			"       C_DELIVERY_CNT = C_DELIVERY_CNT + 1 " +
+	        "   SET C_BALANCE = ?," +
+			"       C_DELIVERY_CNT = ? " +
 			" WHERE C_W_ID = ? " +
 			"   AND C_D_ID = ? " +
 			"   AND C_ID = ? ");
@@ -92,6 +98,7 @@ public class Delivery extends TPCCProcedure {
 	private PreparedStatement delivUpdateDeliveryDate = null;
 	private PreparedStatement delivSumOrderAmount = null;
 	private PreparedStatement delivUpdateCustBalDelivCnt = null;
+	private PreparedStatement readCustomer = null;
 
 
     public ResultSet run(Connection conn, Random gen,
@@ -110,6 +117,7 @@ public class Delivery extends TPCCProcedure {
 		delivUpdateDeliveryDate = this.getPreparedStatement(conn, delivUpdateDeliveryDateSQL);
 		delivSumOrderAmount = this.getPreparedStatement(conn, delivSumOrderAmountSQL);
 		delivUpdateCustBalDelivCnt = this.getPreparedStatement(conn, delivUpdateCustBalDelivCntSQL);
+		readCustomer = this.getPreparedStatement(conn, readCustomerSQL);
 
 		int d_id, c_id;
         float ol_total = 0;
@@ -215,8 +223,19 @@ public class Delivery extends TPCCProcedure {
             ol_total = rs.getFloat("OL_TOTAL");
             rs.close();
 
+	    readCustomer.setInt(1, w_id);
+	    readCustomer.setInt(2, d_id);
+	    readCustomer.setInt(3, c_id);
+	    rs = readCustomer.executeQuery();
+	    rs.next(); 
+	    double c_balance = rs.getFloat("C_BALANCE");
+	    int c_delivery_cnt = rs.getInt("C_DELIVERY_CNT");
+	    rs.close();
+
+
             int idx = 1; // HACK: So that we can debug this query
-            delivUpdateCustBalDelivCnt.setDouble(idx++, ol_total);
+            delivUpdateCustBalDelivCnt.setDouble(idx++, c_balance + ol_total);
+	    delivUpdateCustBalDelivCnt.setInt(idx++, c_delivery_cnt + 1);
             delivUpdateCustBalDelivCnt.setInt(idx++, w_id);
             delivUpdateCustBalDelivCnt.setInt(idx++, d_id);
             delivUpdateCustBalDelivCnt.setInt(idx++, c_id);

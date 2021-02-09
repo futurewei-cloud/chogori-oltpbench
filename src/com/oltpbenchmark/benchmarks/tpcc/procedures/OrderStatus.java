@@ -127,7 +127,7 @@ public class OrderStatus extends TPCCProcedure {
             String msg = String.format("No order records for CUSTOMER [C_W_ID=%d, C_D_ID=%d, C_ID=%d]",
                                        w_id, d_id, c.c_id);
             if (trace) LOG.warn(msg);
-            throw new RuntimeException(msg);
+	    return null;
         }
 
         o_id = rs.getInt("O_ID");
