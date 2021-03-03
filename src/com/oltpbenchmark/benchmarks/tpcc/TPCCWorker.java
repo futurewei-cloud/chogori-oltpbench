@@ -78,7 +78,16 @@ public class TPCCWorker extends Worker<TPCCBenchmark> {
         	LOG.error("We have been invoked with an INVALID transactionType?!");
         	throw new RuntimeException("Bad transaction type = "+ nextTransaction);
 	    }
+        catch (SQLException ex) {
+                conn.commit();
+                return TransactionStatus.RETRY;
+        }
+        try {
         conn.commit();
+        }catch (SQLException ex) {
+                return TransactionStatus.RETRY;
+        }
+
         return (TransactionStatus.SUCCESS);
 	}
 }
