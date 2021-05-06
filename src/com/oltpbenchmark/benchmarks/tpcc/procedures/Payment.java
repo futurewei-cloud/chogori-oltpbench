@@ -102,11 +102,6 @@ public class Payment extends TPCCProcedure {
             "   AND C_D_ID = ? " + 
             "   AND C_ID = ?");
     
-    public SQLStmt payInsertHistSQL = new SQLStmt(
-            "INSERT INTO " + TPCCConstants.TABLENAME_HISTORY + 
-            " (H_C_D_ID, H_C_W_ID, H_C_ID, H_D_ID, H_W_ID, H_DATE, H_AMOUNT, H_DATA) " +
-            " VALUES (?,?,?,?,?,?,?,?)");
-    
     public SQLStmt customerByNameSQL = new SQLStmt(
             "SELECT C_FIRST, C_MIDDLE, C_ID, C_STREET_1, C_STREET_2, C_CITY, " + 
             "       C_STATE, C_ZIP, C_PHONE, C_CREDIT, C_CREDIT_LIM, C_DISCOUNT, " +
@@ -128,7 +123,6 @@ public class Payment extends TPCCProcedure {
     private PreparedStatement payGetCustCdata = null;
     private PreparedStatement payUpdateCustBalCdata = null;
     private PreparedStatement payUpdateCustBal = null;
-    private PreparedStatement payInsertHist = null;
     private PreparedStatement customerByName = null;
 
     public ResultSet run(Connection conn, Random gen,
@@ -146,7 +140,6 @@ public class Payment extends TPCCProcedure {
         payGetCustCdata = this.getPreparedStatement(conn, payGetCustCdataSQL);
         payUpdateCustBalCdata = this.getPreparedStatement(conn, payUpdateCustBalCdataSQL);
         payUpdateCustBal = this.getPreparedStatement(conn, payUpdateCustBalSQL);
-        payInsertHist = this.getPreparedStatement(conn, payInsertHistSQL);
         customerByName = this.getPreparedStatement(conn, customerByNameSQL);
 
         // payUpdateWhse =this.getPreparedStatement(conn, payUpdateWhseSQL);
@@ -303,16 +296,6 @@ public class Payment extends TPCCProcedure {
         if (d_name.length() > 10)
             d_name = d_name.substring(0, 10);
         String h_data = w_name + "    " + d_name;
-
-        payInsertHist.setInt(1, customerDistrictID);
-        payInsertHist.setInt(2, customerWarehouseID);
-        payInsertHist.setInt(3, c.c_id);
-        payInsertHist.setInt(4, districtID);
-        payInsertHist.setInt(5, w_id);
-        payInsertHist.setTimestamp(6, w.getBenchmarkModule().getTimestamp(System.currentTimeMillis()));
-        payInsertHist.setDouble(7, paymentAmount);
-        payInsertHist.setString(8, h_data);
-        payInsertHist.executeUpdate();
 
         conn.commit();
 

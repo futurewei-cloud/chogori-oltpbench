@@ -3,17 +3,17 @@
 	
     <!-- Connection details -->
     <dbtype>postgres</dbtype>
-    <driver>org.postgresql.Driver</driver>
-    <DBUrl>jdbc:postgresql://localhost:5433/postgres</DBUrl>
-    <username>postgres</username>
-    <password>postgres</password>
-    <isolation>TRANSACTION_READ_COMMITTED</isolation>
+    <driver>org.apache.ignite.IgniteJdbcThinDriver</driver>
+    <DBUrl>jdbc:ignite:thin://127.0.0.1</DBUrl>
+    <username>ignite</username>
+    <password>ignite</password>
+    <isolation>TRANSACTION_SERIALIZABLE</isolation>
     
     <!-- Scale factor is the number of warehouses in TPCC -->
-    <scalefactor>1</scalefactor>
-    <loaderThreads>1</loaderThreads>
+    <scalefactor>5</scalefactor>
+    <loaderThreads>3</loaderThreads>
     <!-- The workload -->
-    <terminals>1</terminals>
+    <terminals>6</terminals>
     <works>
         <work>
           <time>120</time>

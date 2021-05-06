@@ -145,7 +145,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
         try {
             conn.commit();
         } catch (SQLException se) {
-            LOG.debug(se.getMessage());
+            LOG.info(se.getMessage());
             transRollback(conn);
         }
     }
@@ -265,7 +265,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 
 			transCommit(conn);
 		} catch (SQLException se) {
-			LOG.debug(se.getMessage());
+			LOG.info(se.getMessage());
 			transRollback(conn);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -342,7 +342,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 			transCommit(conn);
 
 		} catch (SQLException se) {
-			LOG.debug(se.getMessage());
+			LOG.info(se.getMessage());
 			transRollback(conn);
 
 		} catch (Exception e) {
@@ -397,7 +397,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 
 			transCommit(conn);
 		} catch (SQLException se) {
-			LOG.debug(se.getMessage());
+			LOG.info(se.getMessage());
 			transRollback(conn);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -413,12 +413,9 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 		int k = 0;
 
 		Customer customer = new Customer();
-		History history = new History();
 
 		try {
 		    PreparedStatement custPrepStmt = getInsertStatement(conn, TPCCConstants.TABLENAME_CUSTOMER);
-		    PreparedStatement histPrepStmt = getInsertStatement(conn, TPCCConstants.TABLENAME_HISTORY);
-
 			for (int d = 1; d <= districtsPerWarehouse; d++) {
 				for (int c = 1; c <= customersPerDistrict; c++) {
 					Timestamp sysdate = this.benchmark.getTimestamp(System.currentTimeMillis());
@@ -460,15 +457,6 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 					customer.c_data = TPCCUtil.randomStr(TPCCUtil
 							.randomNumber(300, 500, benchmark.rng()));
 
-					history.h_c_id = c;
-					history.h_c_d_id = d;
-					history.h_c_w_id = w_id;
-					history.h_d_id = d;
-					history.h_w_id = w_id;
-					history.h_date = sysdate;
-					history.h_amount = 10;
-					history.h_data = TPCCUtil.randomStr(TPCCUtil
-							.randomNumber(10, 24, benchmark.rng()));
 
 					k = k + 2;
 					int idx = 1;
@@ -496,19 +484,9 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 					custPrepStmt.addBatch();
 
 					idx = 1;
-					histPrepStmt.setInt(idx++, history.h_c_id);
-					histPrepStmt.setInt(idx++, history.h_c_d_id);
-					histPrepStmt.setInt(idx++, history.h_c_w_id);
-					histPrepStmt.setInt(idx++, history.h_d_id);
-					histPrepStmt.setInt(idx++, history.h_w_id);
-					histPrepStmt.setTimestamp(idx++, history.h_date);
-					histPrepStmt.setDouble(idx++, history.h_amount);
-					histPrepStmt.setString(idx++, history.h_data);
-					histPrepStmt.addBatch();
 
 					if ((k % TPCCConfig.configCommitCount) == 0) {
 						custPrepStmt.executeBatch();
-						histPrepStmt.executeBatch();
 						custPrepStmt.clearBatch();
 						custPrepStmt.clearBatch();
 						transCommit(conn);
@@ -517,13 +495,11 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 			} // end for [d]
 
 			custPrepStmt.executeBatch();
-			histPrepStmt.executeBatch();
 			custPrepStmt.clearBatch();
-			histPrepStmt.clearBatch();
 			transCommit(conn);
 
 		} catch (SQLException se) {
-			LOG.debug(se.getMessage());
+			LOG.info(se.getMessage());
 			transRollback(conn);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -611,6 +587,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 				        nworPrepStmt.setInt(idx++, new_order.no_w_id);
 			            nworPrepStmt.setInt(idx++, new_order.no_d_id);
 				        nworPrepStmt.setInt(idx++, new_order.no_o_id);
+				        nworPrepStmt.setInt(idx++, 0);
 			            nworPrepStmt.addBatch();
 						newOrderBatch++;
 					} // end new order
@@ -680,7 +657,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 			transCommit(conn);
 
         } catch (SQLException se) {
-            LOG.debug(se.getMessage());
+            LOG.info(se.getMessage());
             se.printStackTrace();
             transRollback(conn);
         } catch (Exception e) {

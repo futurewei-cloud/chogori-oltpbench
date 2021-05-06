@@ -24,6 +24,7 @@ public class NewOrder implements Serializable {
 	public int no_w_id;
 	public int no_d_id;
 	public int no_o_id;
+	public int tmp;
 
 	@Override
 	public String toString() {
