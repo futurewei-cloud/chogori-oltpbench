@@ -510,7 +510,7 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 						custPrepStmt.executeBatch();
 						histPrepStmt.executeBatch();
 						custPrepStmt.clearBatch();
-						custPrepStmt.clearBatch();
+						histPrepStmt.clearBatch();
 						transCommit(conn);
 					}
 				} // end for [c]
@@ -576,7 +576,8 @@ public class TPCCLoader extends Loader<TPCCBenchmark> {
 					if (oorder.o_id < FIRST_UNPROCESSED_O_ID) {
 						oorder.o_carrier_id = TPCCUtil.randomNumber(1, 10, benchmark.rng());
 					} else {
-						oorder.o_carrier_id = null;
+						oorder.o_carrier_id = TPCCUtil.randomNumber(1, 10, benchmark.rng());
+						//oorder.o_carrier_id = null;
 					}
 					oorder.o_ol_cnt = TPCCUtil.randomNumber(5, 15, benchmark.rng());
 					oorder.o_all_local = 1;

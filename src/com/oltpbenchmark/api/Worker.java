@@ -284,12 +284,6 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
 
             // PART 3: Execute work
 
-            // TODO: Measuring latency when not rate limited is ... a little
-            // weird because if you add more simultaneous clients, you will
-            // increase latency (queue delay) but we do this anyway since it is
-            // useful sometimes
-
-            long start = pieceOfWork.getStartTime();
 
             TransactionType type = invalidTT;
             try {
@@ -319,7 +313,6 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
 
             // PART 4: Record results
 
-            long end = System.nanoTime();
             postState = wrkldState.getGlobalState();
 
             switch (postState) {
@@ -330,7 +323,6 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
                     // that either started during the warmup phase or ended
                     // after the timer went off.
                     if (preState == State.MEASURE && type != null && this.wrkldState.getCurrentPhase().id == phase.id) {
-                        latencies.addLatency(type.getId(), start, end, this.id, phase.id);
                         intervalRequests.incrementAndGet();
                     }
                     if (phase.isLatencyRun())
@@ -365,8 +357,11 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
         Savepoint savepoint = null;
         final DatabaseType dbType = wrkld.getDBType();
         final boolean recordAbortMessages = wrkld.getRecordAbortMessages();
+        TransactionType myType = transactionTypes.getType(pieceOfWork.getType());
+        Phase phase = this.wrkldState.getCurrentPhase();
 
         try {
+           long start = System.nanoTime();
             while (status == TransactionStatus.RETRY && this.wrkldState.getGlobalState() != State.DONE) {
                 if (next == null) {
                     next = transactionTypes.getType(pieceOfWork.getType());
@@ -407,6 +402,8 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
                         this.conn.rollback();
                     }
                     
+                    long end = System.nanoTime();
+                    latencies.addLatency(myType.getId(), start, end, this.id, phase.id);
                     status = TransactionStatus.USER_ABORTED;
                     break;
 
@@ -516,6 +513,8 @@ public abstract class Worker<T extends BenchmarkModule> implements Runnable {
                     
                     switch (status) {
                         case SUCCESS:
+                            long end = System.nanoTime();
+                            latencies.addLatency(myType.getId(), start, end, this.id, phase.id);
                             this.txnSuccess.put(next);
                             break;
                         case RETRY_DIFFERENT:
