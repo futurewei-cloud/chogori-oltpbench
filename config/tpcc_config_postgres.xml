@@ -4,7 +4,7 @@
     <!-- Connection details -->
     <dbtype>postgres</dbtype>
     <driver>org.postgresql.Driver</driver>
-    <DBUrl>jdbc:postgresql://localhost:5432/postgres</DBUrl>
+    <DBUrl>jdbc:postgresql://localhost:5432/testdb</DBUrl>
     <username>omm</username>
     <password>Test3456</password>
     <isolation>TRANSACTION_READ_COMMITTED</isolation>
